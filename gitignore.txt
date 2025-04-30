@@ -1,0 +1,16 @@
+# Ignore Python bytecode and cache
+__pycache__/
+*.py[cod]
+
+# Ignore virtual environments
+venv/
+.env/
+.venv/
+
+# Ignore editor and OS-specific files
+.vscode/
+.DS_Store
+
+# Ignore large or sensitive files (optional)
+*.log
+*.tmp
