@@ -1,9 +1,8 @@
 ### Phase II Data Integration ### 
 
 # The healthcare team needs to gather data from the EHR: analytics -> Clinical/Operational Analytics Reports -> Patient Dem Custom 
-# The healthcare team also needs to manually add the city and state column from each event.
-# City county data is from: https://simplemaps.com/data/us-cities
-# MUA data is from: https://data.hrsa.gov/tools/data-explorer
+# The healthcare team also needs to manually add the city and state column from each screening event.
+
 
 #load necessary packages
 import numpy as np
