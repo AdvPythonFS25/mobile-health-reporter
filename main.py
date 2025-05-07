@@ -30,7 +30,7 @@ merged_data = pd.merge(clinic_with_county,
 #Optional, for reporting we can group the lesions based on: melanoma, basal cell carcinoma, squamous cell carcinoma, precancerous lesion, uncertain suspicious lesion
 #Calculate how many patients had multiple diagnoses in the same visit and provide a table with the multiple diagnoses
 
-'''
+
 keywords = [
     "Actinic Cheilitis",
     "Actinic Keratoses", "Actinic Keratosis", "Diffuse Actinic Keratosis", "Pigmented Actinic Keratosis", "Hypertrophic Actinic Keratosis",
@@ -47,7 +47,63 @@ keywords = [
     "Rule-Out Recurrent Basal", "Rule-Out Recurrent Squamous Cell Carcinoma",
     "Rule-Out Squamous Cell Carcinoma", "in situ Squamous Cell Carcinoma", "Keratoacanthoma type Squamous Cell Carcinoma"
 ]
-'''
+
+# Step 1: Filter rows that match any of the keywords in Diagnosis Name
+
+# Use case-insensitive matching for keywords
+pattern = '|'.join(keywords)
+diagnosis_filtered = merged_data[merged_data['Diagnosis Name'].str.contains(pattern, case=False, na=False)]
+
+# Step 2: Categorise diagnoses
+def categorize_diagnosis(diagnosis):
+    diagnosis = diagnosis.lower()
+    if "melanoma" in diagnosis or "lentigo maligna" in diagnosis:
+        return "Melanoma"
+    elif "basal cell carcinoma" in diagnosis or "bcc" in diagnosis:
+        return "Basal Cell Carcinoma"
+    elif "squamous cell carcinoma" in diagnosis or "keratoacanthoma" in diagnosis:
+        return "Squamous Cell Carcinoma"
+    elif "actinic" in diagnosis or "porokeratosis" in diagnosis:
+        return "Precancerous Lesion"
+    elif "dysplastic" in diagnosis or "nevi" in diagnosis or "neoplasm" in diagnosis:
+        return "Uncertain/Suspicious Lesion"
+    else:
+        return "Other"
+
+diagnosis_filtered['Lesion Category'] = diagnosis_filtered['Diagnosis Name'].apply(categorize_diagnosis)
+
+# Map lesion categories into summary groups
+diagnosis_filtered['Group'] = diagnosis_filtered['Lesion Category'].replace({
+    'Basal Cell Carcinoma': 'NMSC',
+    'Squamous Cell Carcinoma': 'NMSC',
+    'Melanoma': 'Melanoma',
+    'Precancerous Lesion': 'Precancerous',
+})
+
+# Handle any unmapped categories
+diagnosis_filtered['Group'].fillna('Other', inplace=True)
+
+# Count occurrences by group
+summary_counts = diagnosis_filtered['Group'].value_counts().loc[["Precancerous", "NMSC", "Melanoma"]].reset_index()
+summary_counts.columns = ['Diagnosis Group', 'Count']
+summary_counts
+
+# Add percentage column
+total = summary_counts['Count'].sum()
+summary_counts['Percent'] = (summary_counts['Count'] / total * 100).round(2)
+
+# Step 3: Find patients with multiple diagnoses in the same visit
+multi_diag = merged_data.groupby(['Service Date', 'Patient_ID']).filter(lambda x: len(x) > 1)
+multi_diag_table = multi_diag.groupby(['Service Date', 'Patient_ID'])['Diagnosis Name'].apply(list).reset_index()
+multi_diag_table
+
+# Export tables for reporting
+#summary_counts.to_csv("diagnosis_summary_counts.csv", index=False)
+#multi_diag_table.to_csv("multiple_diagnoses_table.csv", index=False)
+
+# Show outputs (for debugging or interactive use)
+print(summary_counts)
+print(multi_diag_table)
 
 ### Phase IV Reporting Tool Development ###
 # is there a way we can add a new spreadsheet of clinical data and it will add to the summary data and produce a new report?
