@@ -1,5 +1,5 @@
 # mobile-clinic-reporter
-The Sun Bus is a mobile dermatology clinic providing free cancer screenings across various US cities. Out project aims to build a reporting tool that helps The Sun Bus analyse screening data, identify trends in diagnoses and generate both city-specific and cumulative reports.
+The Sun Bus is a non-profit mobile dermatology clinic providing free cancer screenings across various US cities. Our project aims to build a reporting tool that helps The Sun Bus analyse screening data, identify trends in diagnoses and generate both city-specific and cumulative reports. 
 
 # Objectives
 Correlate screening events (city) with county-level data and rural/urban classification (using MUI).
