@@ -13,7 +13,7 @@ Produce individual city reports and an evolving cumulative summary,
 Provide data visualisations for trends over time and geography.
 
 # Datasets
-EHR data: patient demographics, visit date, diagnosis information.
+EHR data: patient demographics, visit date, diagnosis information. The data has been generated based off of patient-anonymized data collected by The Sun Bus. 
 City-county mapping: US cities and their corresponding counties (from: https://simplemaps.com/data/us-cities).
 Medically Underserved Index (MUI): rural/urban classification by county (from: https://data.hrsa.gov/tools/data-explorer).
 Tools: Python, GitHub for version control, Markdown for documentation
