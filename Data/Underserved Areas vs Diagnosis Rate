@@ -1,0 +1,5 @@
+Is_Underserved,Group,Count
+True,Melanoma,5
+True,NMSC,39
+True,Precancerous,60
+True,Uncertain/Suspicious Lesion,28

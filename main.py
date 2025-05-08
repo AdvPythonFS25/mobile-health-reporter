@@ -97,13 +97,34 @@ multi_diag = merged_data.groupby(['Service Date', 'Patient_ID']).filter(lambda x
 multi_diag_table = multi_diag.groupby(['Service Date', 'Patient_ID'])['Diagnosis Name'].apply(list).reset_index()
 multi_diag_table
 
+
+# Step 4: Group by geography and diagnosis group
+geo_counts = diagnosis_filtered.groupby(['State', 'County', 'City', 'Group']).size().reset_index(name='Count')
+
+# Total diagnoses per city (all groups combined)
+geo_total = diagnosis_filtered.groupby(['State', 'County', 'City']).size().reset_index(name='Total Diagnoses')
+
+# Add a flag for medically underserved (Designation Type not null)
+diagnosis_filtered['Is_Underserved'] = diagnosis_filtered['Designation Type'].notna()
+
+# Step 5: Count diagnoses per group and underserved status
+underserved_summary = diagnosis_filtered.groupby(['Is_Underserved', 'Group']).size().reset_index(name='Count')
+
 # Export tables for reporting
-#summary_counts.to_csv("diagnosis_summary_counts.csv", index=False)
-#multi_diag_table.to_csv("multiple_diagnoses_table.csv", index=False)
+# summary_counts.to_csv("diagnosis_summary_counts.csv", index=False)
+# multi_diag_table.to_csv("multiple_diagnoses_table.csv", index=False)
+# geo_counts.to_csv("Geographic Hotspots and Diagnosis group ")
+# geo_total.to_csv("Total Diagnoses per City")
+# underserved_summary.to_csv("Underserved Areas vs Diagnosis Rate", index=False)
 
 # Show outputs (for debugging or interactive use)
 print(summary_counts)
 print(multi_diag_table)
+print(geo_counts)
+print(geo_total)
+print(underserved_summary)
+
+
 
 ### Phase IV Reporting Tool Development ###
 # is there a way we can add a new spreadsheet of clinical data and it will add to the summary data and produce a new report?
