@@ -90,16 +90,16 @@ class DiagnosisAnalyzer:
 
 # ---------------------- Run Full Pipeline ----------------------
 # Load data
-#datset_clinic, dataset_medunderserved, dataset_city_county = load_data()
+datset_clinic, dataset_medunderserved, dataset_city_county = load_data()
 
 # Merge datasets
-#merged_data = merge_datasets(datset_clinic, dataset_medunderserved, dataset_city_county)
+merged_data = merge_datasets(datset_clinic, dataset_medunderserved, dataset_city_county)
 
 # Analyse
-#analyzer = DiagnosisAnalyzer(merged_data)
+analyzer = DiagnosisAnalyzer(merged_data)
 
 # Step 1: Filter by keywords
-#keywords = [
+keywords = [
     "Actinic Cheilitis", "Actinic Keratoses", "Actinic Keratosis", "Diffuse Actinic Keratosis",
     "Pigmented Actinic Keratosis", "Hypertrophic Actinic Keratosis", "Disseminated Superficial Actinic Porokeratosis",
     "Atypical Nevi", "Clark's Nevi", "Dysplastic Nevi", "Dysplastic Nevus", "Rule-Out dysplastic Nevi",
@@ -107,28 +107,28 @@ class DiagnosisAnalyzer:
     "Rule-Out Basal Cell Carcinoma", "Rule-out Lentigo Maligna", "Rule-out Melanoma",
     "Rule-Out Non-Melanoma Skin Cancer", "Rule-Out Recurrent Basal", "Rule-Out Recurrent Squamous Cell Carcinoma",
     "Rule-Out Squamous Cell Carcinoma", "in situ Squamous Cell Carcinoma", "Keratoacanthoma type Squamous Cell Carcinoma"
-#]
-#analyzer.filter_by_keywords(keywords)
+]
+analyzer.filter_by_keywords(keywords)
 
 # Step 2: Categorise diagnosis
-#analyzer.categorize_diagnosis()
+analyzer.categorize_diagnosis()
 
 # Step 3: Summaries
-#summary_counts = analyzer.compute_summary_counts()
-#multi_diag_table = analyzer.find_multiple_diagnoses()
-#geo_counts, geo_total = analyzer.geographic_summary()
-#underserved_summary = analyzer.underserved_summary()
+summary_counts = analyzer.compute_summary_counts()
+multi_diag_table = analyzer.find_multiple_diagnoses()
+geo_counts, geo_total = analyzer.geographic_summary()
+underserved_summary = analyzer.underserved_summary()
 
 # Step 4: Show Outputs
-#print(summary_counts)
-#print(multi_diag_table)
-#print(geo_counts)
-#print(geo_total)
-#print(underserved_summary)
+print(summary_counts)
+print(multi_diag_table)
+print(geo_counts)
+print(geo_total)
+print(underserved_summary)
 
 # Export tables for reporting
-# summary_counts.to_csv("diagnosis_summary_counts.csv", index=False)
-# multi_diag_table.to_csv("multiple_diagnoses_table.csv", index=False)
-# geo_counts.to_csv("Geographic Hotspots and Diagnosis group ")
-# geo_total.to_csv("Total Diagnoses per City")
-# underserved_summary.to_csv("Underserved Areas vs Diagnosis Rate", index=False)
+summary_counts.to_csv("diagnosis_summary_counts.csv", index=False)
+multi_diag_table.to_csv("multiple_diagnoses_table.csv", index=False)
+geo_counts.to_csv("Geographic Hotspots and Diagnosis group ")
+geo_total.to_csv("Total Diagnoses per City")
+underserved_summary.to_csv("Underserved Areas vs Diagnosis Rate", index=False)
