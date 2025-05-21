@@ -12,7 +12,7 @@ import geopandas as gpd
 from shapely.geometry import Point
 from matplotlib.lines import Line2D
 
-def load_data(path="Data/"):
+def load_data(path=""):
     # Load and stack all clinic CSVs from dedicated folder
     clinic_folder = os.path.join(path, "clinic_data")
     clinic_files = [f for f in os.listdir(clinic_folder) if f.endswith(".csv")]
@@ -125,7 +125,8 @@ class DiagnosisAnalyzer:
 # ---------------------- Run Full Pipeline ----------------------
 
 # Load data
-dataset_clinic, dataset_medunderserved, dataset_city_county = load_data()
+path="Data/"
+dataset_clinic, dataset_medunderserved, dataset_city_county = load_data(path)
 
 # Merge datasets
 merged_data = merge_datasets(dataset_clinic, dataset_medunderserved, dataset_city_county)
