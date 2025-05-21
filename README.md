@@ -22,6 +22,16 @@ Tools: Python, GitHub for version control, Markdown for documentation
 Sun Bus Team (healthcare providers and analysts who require streamlined and up-to-date reports from mobile dermatology screenings), as well as other mobile clinics who can modify and use the tool for their benefit. 
 
 # What you need to run this program
+
+Option 1: Launch with binder
+In order to run the program directly from your browser no prerequisites are required on your local machine. Click on the button then from after the program loads in the buit in file browser find the binder_launcher notebook and run the cell in order to execute the program. The output files are not saved but may be downloaded manually.
+
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/AdvPythonFS25/mobile-health-reporter.git/HEAD?urlpath=%2Fdoc%2Ftree%2Fmain_pipeline.py)
+
+Option 2: Running from local machine
+
+Any code interpreter that supports python
+
 Python installed (version 3.7+ recommended).
 
 The required CSV files (found in data)
@@ -29,11 +39,11 @@ EHR_clinic_data.csv
 MUA_DATA_2025.csv
 US_City_County_Data.csv
 
-The required library installed:
-pandas
+The required libraries are listed in the requirements.txt file
+
+Simply run the main_pipeline.py in your code interpreter the "Summary_Report" spreadsheet will be saved in the same directory as the executed script and the charts and maps will be saved saved in the generated "plots" directory. 
 
 # Authors
 Refer to member.txt file.
 
-#binder link
-[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/AdvPythonFS25/mobile-health-reporter.git/HEAD?urlpath=%2Fdoc%2Ftree%2Fmain_pipeline.py)
+
