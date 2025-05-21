@@ -21,5 +21,16 @@ Tools: Python, GitHub for version control, Markdown for documentation
 # Target Users
 Sun Bus Team (healthcare providers and analysts who require streamlined and up-to-date reports from mobile dermatology screenings), as well as other mobile clinics who can modify and use the tool for their benefit. 
 
+# What you need to run this program
+Python installed (version 3.7+ recommended).
+
+The required CSV files (found in data)
+EHR_clinic_data.csv
+MUA_DATA_2025.csv
+US_City_County_Data.csv
+
+The required library installed:
+pandas
+
 # Authors
 Refer to member.txt file.
