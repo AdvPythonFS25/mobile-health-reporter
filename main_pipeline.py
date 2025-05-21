@@ -255,7 +255,7 @@ for state in states:
         plt.close()
 
 # 4. Combined Map: State Choropleth + City Points
-city_data = pd.read_csv("US_City_County_Data.csv")
+city_data = pd.read_csv(f"{path}US_City_County_Data.csv")
 city_data['City'] = city_data['City'].astype(str).str.strip().str.lower()
 city_data['State'] = city_data['State'].astype(str).str.strip().str.upper()
 
