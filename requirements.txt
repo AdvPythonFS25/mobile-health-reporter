@@ -1,0 +1,6 @@
+pandas
+geopandas
+shapely
+matplotlib
+seaborn
+us
