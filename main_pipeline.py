@@ -282,7 +282,7 @@ state_totals = analyzer.diagnosis_filtered.groupby('State').size().reset_index(n
 state_totals['State'] = state_totals['State'].astype(str).str.upper()
 state_totals['Full Name'] = state_totals['State'].apply(lambda abbr: us.states.lookup(abbr).name if us.states.lookup(abbr) else abbr)
 
-us_states = gpd.read_file("https://raw.githubusercontent.com/PublicaMundi/MappingAPI/master/data/geojson/us-states.json")
+us_states = gpd.read_file(f"{path}us-states.json")
 us_states = us_states.rename(columns={"name": "Full Name"})
 us_states = us_states.merge(state_totals, on="Full Name", how="left")
 
