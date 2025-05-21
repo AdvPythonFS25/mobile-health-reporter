@@ -3,19 +3,36 @@
 #Import the needed libraries 
 import numpy as np
 import pandas as pd
+import os
+from datetime import datetime
+import matplotlib.pyplot as plt
+import seaborn as sns
+import us
+import geopandas as gpd
+from shapely.geometry import Point
+from matplotlib.lines import Line2D
 
-# ---------------------- Load Datasets ----------------------
-def load_data():
-    datset_clinic = pd.read_csv("EHR_clinic_data.csv") #from mobile health team
-    dataset_medunderserved = pd.read_csv("MUA_DATA_2025.csv") #from US Health Resources & Service GOV
-    dataset_city_county = pd.read_csv("US_City_County_Data.csv") #from online database
-    return datset_clinic, dataset_medunderserved, dataset_city_county
+def load_data(path=""):
+    # Load and stack all clinic CSVs from dedicated folder
+    clinic_folder = os.path.join(path, "clinic_data")
+    clinic_files = [f for f in os.listdir(clinic_folder) if f.endswith(".csv")]
+    dataset_clinic = pd.concat(
+        [pd.read_csv(os.path.join(clinic_folder, f)) for f in clinic_files],
+        ignore_index=True
+    )
+
+    # Load the other datasets
+    dataset_medunderserved = pd.read_csv(f"{path}MUA_DATA_2025.csv")
+    dataset_city_county = pd.read_csv(f"{path}US_City_County_Data.csv")
+
+    return dataset_clinic, dataset_medunderserved, dataset_city_county
+
 
 # ---------------------- Merge Data ----------------------
-def merge_datasets(datset_clinic, dataset_medunderserved, dataset_city_county):
+def merge_datasets(dataset_clinic, dataset_medunderserved, dataset_city_county):
     # Merge clinic with county info
     clinic_with_county = pd.merge(
-        datset_clinic,
+        dataset_clinic,
         dataset_city_county[['City', 'State', 'County']],
         on=['City', 'State'],
         how='left'
@@ -104,45 +121,14 @@ class DiagnosisAnalyzer:
         geo_total = self.diagnosis_filtered.groupby(['State', 'County', 'City']).size().reset_index(name='Total Diagnoses')
         return geo_counts, geo_total
 
-    def underserved_rural_summary(self):
-        """Summarise diagnosis group by underserved and rural status,
-        only if City, State, and County match with MUA data.
-        """
-        df = self.diagnosis_filtered.copy()
-
-        # Make sure relevant columns exist
-        for col in ['City', 'County', 'State', 'Designation Type', 'Rural Status']:
-            if col not in df.columns:
-                df[col] = None
-
-        # Standardize key fields for comparison
-        df['City'] = df['City'].astype(str).str.strip().str.lower()
-        df['County'] = df['County'].astype(str).str.strip().str.lower()
-        df['State'] = df['State'].astype(str).str.strip().str.upper()
-
-        # Apply flags ONLY if City + County + State are present
-        df['Has_Geographic_Match'] = df[['City', 'County', 'State']].notna().all(axis=1)
-
-        df['Is_Underserved'] = df.apply(
-            lambda row: 'Yes' if row['Has_Geographic_Match'] and pd.notna(row['Designation Type']) else 'No',
-            axis=1
-        )
-
-        df['Is_Rural'] = df.apply(
-            lambda row: 'Yes' if row['Has_Geographic_Match'] and isinstance(row['Rural Status'], str) and row['Rural Status'].strip().lower() == 'rural' else 'No',
-            axis=1
-        )
-
-        return df.groupby(['Is_Underserved', 'Is_Rural', 'Group']).size().reset_index(name='Count')
-
 
 # ---------------------- Run Full Pipeline ----------------------
 
 # Load data
-datset_clinic, dataset_medunderserved, dataset_city_county = load_data()
+dataset_clinic, dataset_medunderserved, dataset_city_county = load_data()
 
 # Merge datasets
-merged_data = merge_datasets(datset_clinic, dataset_medunderserved, dataset_city_county)
+merged_data = merge_datasets(dataset_clinic, dataset_medunderserved, dataset_city_county)
 
 # Analyse
 analyzer = DiagnosisAnalyzer(merged_data)
@@ -166,7 +152,6 @@ analyzer.categorize_diagnosis()
 summary_counts = analyzer.compute_summary_counts()
 multi_diag_table = analyzer.find_multiple_diagnoses()
 geo_counts, geo_total = analyzer.geographic_summary()
-underserved_summary = analyzer.underserved_rural_summary()
 
 # Step 4: Create unified city-level summary table
 def generate_city_summary(analyzer):
@@ -214,7 +199,109 @@ def generate_city_summary(analyzer):
 final_report = generate_city_summary(analyzer)
 
 # Step 5: Export to single spreadsheet
-from datetime import datetime
 report_date = datetime.today().strftime('%d-%b-%Y')
 final_report.to_csv(f"Summary_Report_{report_date}.csv", index=False)
 print(final_report.head())
+
+# ---------------------- Visualizations ----------------------
+
+# Ensure plots directory exists
+plots_dir = f"plots_{report_date}"
+os.makedirs(plots_dir, exist_ok=True)
+os.makedirs(f"{plots_dir}/maps", exist_ok=True)
+
+# Create a safe copy of diagnosis_filtered for visualization
+analyzer.diagnosis_filtered = analyzer.diagnosis_filtered.copy()
+
+# Parse service date
+analyzer.diagnosis_filtered['Service Date'] = pd.to_datetime(analyzer.diagnosis_filtered['Service Date'], format='%m/%d/%Y')
+
+# 1. Diagnosis distribution by state
+plt.figure(figsize=(12, 6))
+# Replace state abbreviations with full names for plotting
+analyzer.diagnosis_filtered['Full State Name'] = analyzer.diagnosis_filtered['State'].apply(lambda abbr: us.states.lookup(abbr).name if us.states.lookup(abbr) else abbr)
+state_order = analyzer.diagnosis_filtered['Full State Name'].value_counts().index
+sns.countplot(data=analyzer.diagnosis_filtered, y='Full State Name', order=state_order)
+plt.title("Diagnosis Distribution by State")
+plt.xlabel("Number of Diagnoses")
+plt.tight_layout()
+plt.savefig(f"{plots_dir}/diagnosis_by_state.png")
+plt.close()
+
+# 2. Diagnosis type by rural vs non-rural
+plt.figure(figsize=(10, 6))
+sns.countplot(data=analyzer.diagnosis_filtered, x='Group', hue='Is_Rural')
+plt.title("Diagnosis Type by Rural vs Non-Rural")
+plt.ylabel("Number of Diagnoses")
+plt.xlabel("Diagnosis Type")
+plt.tight_layout()
+plt.savefig(f"{plots_dir}//diagnosis_type_by_rural_status.png")
+plt.close()
+
+# 3. Diagnosis type by rural vs non-rural per state
+states = analyzer.diagnosis_filtered['State'].dropna().unique()
+for state in states:
+    state_data = analyzer.diagnosis_filtered[analyzer.diagnosis_filtered['State'] == state]
+    if not state_data.empty:
+        full_name = us.states.lookup(state).name if us.states.lookup(state) else state
+        plt.figure(figsize=(10, 6))
+        sns.countplot(data=state_data, x='Group', hue='Is_Rural')
+        plt.title(f"Diagnosis Type by Rural vs Non-Rural in {full_name}")
+        plt.ylabel("Number of Diagnoses")
+        plt.xlabel("Diagnosis Type")
+        plt.tight_layout()
+        safe_state = state.replace(" ", "_").replace("/", "_")
+        plt.savefig(f"{plots_dir}/diagnosis_type_by_rural_status_{safe_state}.png")
+        plt.close()
+
+# 4. Combined Map: State Choropleth + City Points
+city_data = pd.read_csv("US_City_County_Data.csv")
+city_data['City'] = city_data['City'].astype(str).str.strip().str.lower()
+city_data['State'] = city_data['State'].astype(str).str.strip().str.upper()
+
+city_counts = analyzer.diagnosis_filtered.groupby(['City', 'State']).size().reset_index(name='Diagnosis Count')
+city_counts['City'] = city_counts['City'].astype(str).str.strip().str.lower()
+city_counts['State'] = city_counts['State'].astype(str).str.strip().str.upper()
+
+city_geo = pd.merge(city_counts, city_data, on=['City', 'State'], how='left')
+
+# Handle lat/lng columns
+lat_col = next((col for col in city_geo.columns if col.strip().lower() in ['latitude', 'lat']), None)
+lon_col = next((col for col in city_geo.columns if col.strip().lower() in ['longitude', 'lng', 'lon']), None)
+
+if lat_col is None or lon_col is None:
+    raise ValueError("Latitude and/or Longitude columns not found in the city data.")
+
+city_geo = city_geo.dropna(subset=[lat_col, lon_col])
+city_geo['geometry'] = city_geo.apply(lambda row: Point(row[lon_col], row[lat_col]), axis=1)
+city_gdf = gpd.GeoDataFrame(city_geo, geometry='geometry', crs='EPSG:4326')
+
+# Diagnosis counts by state
+state_totals = analyzer.diagnosis_filtered.groupby('State').size().reset_index(name='Total Diagnoses')
+state_totals['State'] = state_totals['State'].astype(str).str.upper()
+state_totals['Full Name'] = state_totals['State'].apply(lambda abbr: us.states.lookup(abbr).name if us.states.lookup(abbr) else abbr)
+
+us_states = gpd.read_file("https://raw.githubusercontent.com/PublicaMundi/MappingAPI/master/data/geojson/us-states.json")
+us_states = us_states.rename(columns={"name": "Full Name"})
+us_states = us_states.merge(state_totals, on="Full Name", how="left")
+
+# Plot combined map
+fig, ax = plt.subplots(figsize=(15, 10))
+us_states.plot(column='Total Diagnoses', ax=ax, legend=True, cmap='OrRd', edgecolor='black')
+city_gdf.plot(ax=ax, markersize=city_gdf['Diagnosis Count'], color='blue', alpha=0.6, edgecolor='k')
+plt.title("US Diagnosis Distribution by State and City")
+plt.axis('off')
+
+bubble_sizes = [10, 50, 100, 250, 500]
+legend_elements = [
+    Line2D([0], [0], marker='o', color='w', label='City (diagnosis count)',
+           markerfacecolor='blue', markeredgecolor='k', markersize=6, linestyle='None')
+] + [
+    Line2D([0], [0], marker='o', color='w', label=f'{size} cases',
+           markerfacecolor='blue', markeredgecolor='k', markersize=np.sqrt(size), linestyle='None')
+    for size in bubble_sizes
+]
+ax.legend(handles=legend_elements, loc='lower left')
+plt.savefig(f"{plots_dir}/maps/us_diagnosis_map.png", bbox_inches="tight")
+plt.close()
+
