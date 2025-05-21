@@ -26,7 +26,7 @@ Sun Bus Team (healthcare providers and analysts who require streamlined and up-t
 ## Option 1: Launch with Binder
 
 
-In order to run the program directly from your browser no prerequisites are required on your local machine. Click on the button then from after the program loads run the cell in order to execute the program. The output files are not saved but may be downloaded manually.
+In order to run the program directly from your browser no prerequisites are required on your local machine. Click on the button then from after the program loads run the cell in order to execute the program. The output files are not saved but may be downloaded manually. They can be accesed via the binder file explorer (upper left corner folder icon) the files take a short time to appear after the program runs.
 
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/AdvPythonFS25/mobile-health-reporter.git/HEAD?urlpath=%2Fdoc%2Ftree%2Fbinder_launcher.ipynb)
 
