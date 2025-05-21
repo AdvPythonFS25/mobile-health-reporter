@@ -1,14 +1,14 @@
 '''Pipeline for Mobile Clinic Reporting Tool'''
 
-#Import needed libraries 
+#Import the needed libraries 
 import numpy as np
 import pandas as pd
 
 # ---------------------- Load Datasets ----------------------
 def load_data():
-    datset_clinic = pd.read_csv("EHR_clinic_data.csv")
-    dataset_medunderserved = pd.read_csv("MUA_DATA_2025.csv")
-    dataset_city_county = pd.read_csv("US_City_County_Data.csv")
+    datset_clinic = pd.read_csv("EHR_clinic_data.csv") #from mobile health team
+    dataset_medunderserved = pd.read_csv("MUA_DATA_2025.csv") #from US Health Resources & Service GOV
+    dataset_city_county = pd.read_csv("US_City_County_Data.csv") #from online database
     return datset_clinic, dataset_medunderserved, dataset_city_county
 
 # ---------------------- Merge Data ----------------------
@@ -137,6 +137,7 @@ class DiagnosisAnalyzer:
 
 
 # ---------------------- Run Full Pipeline ----------------------
+
 # Load data
 datset_clinic, dataset_medunderserved, dataset_city_county = load_data()
 
@@ -167,19 +168,53 @@ multi_diag_table = analyzer.find_multiple_diagnoses()
 geo_counts, geo_total = analyzer.geographic_summary()
 underserved_summary = analyzer.underserved_rural_summary()
 
-# Step 4: Show Outputs
-print(summary_counts)
-print(multi_diag_table)
-print(geo_counts)
-print(geo_total)
-print(underserved_summary)
+# Step 4: Create unified city-level summary table
+def generate_city_summary(analyzer):
+    data = analyzer.data
+    diag_data = analyzer.diagnosis_filtered
 
-# Export tables for reporting
-summary_counts.to_csv("diagnosis_summary_counts.csv", index=False)
-multi_diag_table.to_csv("multiple_diagnoses_table.csv", index=False)
-geo_counts.to_csv("Geographic Hotspots and Diagnosis group ")
-geo_total.to_csv("Total Diagnoses per City")
-underserved_summary.to_csv("Underserved Areas vs Diagnosis Rate", index=False)
+    total_patients = data.groupby(['City', 'State']).agg({
+        'Patient_ID': pd.Series.nunique
+    }).rename(columns={'Patient_ID': '# patient count'}).reset_index()
 
+    multi_diag = analyzer.find_multiple_diagnoses()
+    multi_diag['Has_Multiple'] = True
+    multiple_patients = multi_diag.groupby(['Service Date', 'Patient_ID']).size().reset_index()[['Patient_ID']]
+    multiple_counts = data[data['Patient_ID'].isin(multiple_patients['Patient_ID'])].groupby(['City', 'State']).agg({
+        'Patient_ID': pd.Series.nunique
+    }).rename(columns={'Patient_ID': '# patient with multiple diagnoses'}).reset_index()
 
+    category_counts = diag_data.groupby(['City', 'State', 'Group']).size().unstack(fill_value=0).reset_index()
 
+    diag_data['Is_Suspicious'] = diag_data['Lesion Category'].str.contains('Uncertain|Suspicious', case=False, na=False)
+    suspicious_counts = diag_data[diag_data['Is_Suspicious']].groupby(['City', 'State']).size().reset_index(name='#Uncertain/Suspicious lesion')
+
+    rural_underserved = data.drop_duplicates(subset=['City', 'State'])[['City', 'State', 'Is_Rural', 'Is_Underserved']]
+
+    result = total_patients
+    result = result.merge(multiple_counts, on=['City', 'State'], how='left')
+    result = result.merge(category_counts, on=['City', 'State'], how='left')
+    result = result.merge(suspicious_counts, on=['City', 'State'], how='left')
+    result = result.merge(rural_underserved, on=['City', 'State'], how='left')
+
+    for col in ['# patient with multiple diagnoses', 'Precancerous', 'NMSC', 'Melanoma', '#Uncertain/Suspicious lesion']:
+        if col in result.columns:
+            result[col] = result[col].fillna(0).astype(int)
+
+    result = result.rename(columns={
+        'Precancerous': '# precancer',
+        'NMSC': '# NMSC',
+        'Melanoma': '# Melanoma'
+    })
+
+    return result[['City', 'State', 'Is_Rural', 'Is_Underserved',
+                   '# patient count', '# patient with multiple diagnoses',
+                   '# precancer', '# NMSC', '# Melanoma', '#Uncertain/Suspicious lesion']]
+
+final_report = generate_city_summary(analyzer)
+
+# Step 5: Export to single spreadsheet
+from datetime import datetime
+report_date = datetime.today().strftime('%d-%b-%Y')
+final_report.to_csv(f"Summary_Report_{report_date}.csv", index=False)
+print(final_report.head())
