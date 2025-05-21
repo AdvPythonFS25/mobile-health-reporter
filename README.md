@@ -32,9 +32,9 @@ Option 2: Running on your local machine
 Any code interpreter that supports python
 Python installed (version 3.7+ recommended).
 The required CSV files (found in data):
-  EHR_clinic_data.csv
-  MUA_DATA_2025.csv
-  US_City_County_Data.csv
+EHR_clinic_data.csv
+MUA_DATA_2025.csv
+US_City_County_Data.csv
 The required libraries. which are listed in the requirements.txt file
 Instructions: Simply run the main_pipeline.py in your code interpreter the "Summary_Report" spreadsheet will be saved in the same directory as the executed script and the charts and maps will be saved saved in the generated "plots" directory. 
 
