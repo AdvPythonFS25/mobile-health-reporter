@@ -12,7 +12,7 @@ import geopandas as gpd
 from shapely.geometry import Point
 from matplotlib.lines import Line2D
 
-def load_data(path=""):
+def load_data(path="Data/"):
     # Load and stack all clinic CSVs from dedicated folder
     clinic_folder = os.path.join(path, "clinic_data")
     clinic_files = [f for f in os.listdir(clinic_folder) if f.endswith(".csv")]
