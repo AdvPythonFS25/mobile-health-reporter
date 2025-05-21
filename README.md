@@ -47,6 +47,6 @@ In order to run the program directly from your browser no prerequisites are requ
 Instructions: Dowload and extract the project zip. Then, simply run the main_pipeline.py in your code interpreter. The "Summary_Report" spreadsheet will be saved in the same directory as the executed script and the charts and maps will be saved saved in the generated "plots" directory. 
 
 # Authors
-Refer to `member.txt` file.
+Refer to `members.txt` file.
 
 
