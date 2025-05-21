@@ -41,6 +41,7 @@ In order to run the program directly from your browser no prerequisites are requ
   - `EHR_clinic_data.csv`
   - `MUA_DATA_2025.csv`
   - `US_City_County_Data.csv`
+  - `us-states.json`
 
 
 Instructions: Simply run the main_pipeline.py in your code interpreter the "Summary_Report" spreadsheet will be saved in the same directory as the executed script and the charts and maps will be saved saved in the generated "plots" directory. 
