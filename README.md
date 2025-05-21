@@ -34,3 +34,6 @@ pandas
 
 # Authors
 Refer to member.txt file.
+
+#binder link
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/AdvPythonFS25/mobile-health-reporter.git/HEAD?urlpath=%2Fdoc%2Ftree%2Fmain_pipeline.py)
