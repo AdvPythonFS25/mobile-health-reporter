@@ -10,7 +10,7 @@ Distribution of cases by region and rurality,
 Patients with multiple diagnoses,
 Allow continuous integration of new screening event data,
 Produce individual city reports and an evolving cumulative summary,
-Provide data visualisations for trends over time and geography.
+Provide geographic data visualisations.
 
 # Datasets
 EHR data: patient demographics, visit date, diagnosis information. The data has been generated based off of patient-anonymized data collected by The Sun Bus. 
