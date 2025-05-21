@@ -37,7 +37,7 @@ In order to run the program directly from your browser no prerequisites are requ
 - Any code editor or terminal that supports Python
 - Python installed (version **3.7+** recommended)
 - The required libraries (see `requirements.txt`)
-- The following CSV files (located in the `Data` folder):
+- The following files (located in the `Data` folder):
   - `EHR_clinic_data.csv`
   - `MUA_DATA_2025.csv`
   - `US_City_County_Data.csv`
