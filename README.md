@@ -23,22 +23,29 @@ Sun Bus Team (healthcare providers and analysts who require streamlined and up-t
 
 # What you need to run this program
 
-Option 1: Launch with binder
-In order to run the program directly from your browser no prerequisites are required on your local machine. Click on the button then from after the program loads in the buit in file browser find the binder_launcher notebook and run the cell in order to execute the program. The output files are not saved but may be downloaded manually.
+## Option 1: Launch with Binder
+
+
+In order to run the program directly from your browser no prerequisites are required on your local machine. Click on the button then from after the program loads in the buit in file browser find the `binder_launcher` jupyter notebook and run the cell in order to execute the program. The output files are not saved but may be downloaded manually.
 
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/AdvPythonFS25/mobile-health-reporter.git/HEAD?urlpath=%2Fdoc%2Ftree%2Fmain_pipeline.py)
 
-Option 2: Running on your local machine
-Any code interpreter that supports python
-Python installed (version 3.7+ recommended).
-The required CSV files (found in data):
-EHR_clinic_data.csv
-MUA_DATA_2025.csv
-US_City_County_Data.csv
-The required libraries. which are listed in the requirements.txt file
+---
+
+## Option 2: Running on your local machine requires:
+
+- Any code editor or terminal that supports Python
+- Python installed (version **3.7+** recommended)
+- The required libraries (see `requirements.txt`)
+- The following CSV files (located in the `Data/` folder):
+  - `EHR_clinic_data.csv`
+  - `MUA_DATA_2025.csv`
+  - `US_City_County_Data.csv`
+
+
 Instructions: Simply run the main_pipeline.py in your code interpreter the "Summary_Report" spreadsheet will be saved in the same directory as the executed script and the charts and maps will be saved saved in the generated "plots" directory. 
 
 # Authors
-Refer to member.txt file.
+Refer to `member.txt` file.
 
 
