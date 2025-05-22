@@ -1,72 +1,82 @@
 '''Pipeline for Mobile Clinic Reporting Tool'''
 
 #Import the needed libraries 
-import numpy as np
-import pandas as pd
-import os
-from datetime import datetime
-import matplotlib.pyplot as plt
-import seaborn as sns
-import us
-import geopandas as gpd
-from shapely.geometry import Point
-from matplotlib.lines import Line2D
+import numpy as np        # For numerical operations, especially arrays and mathematical functions
+import pandas as pd       # For data manipulation and analysis (DataFrames)
+import os                 # For interacting with the operating system, e.g., file paths
+from datetime import datetime  # To work with date and time values
+import matplotlib.pyplot as plt  # For plotting graphs and figures
+import seaborn as sns     # For making statistical visualizations (built on matplotlib)
+import us                 # For accessing US state information (e.g., full names from abbreviations)
+import geopandas as gpd   # For working with geospatial data
+from shapely.geometry import Point  # To define points (latitude, longitude) for maps
+from matplotlib.lines import Line2D  # To customize legends in matplotlib plots
 
+# Function to load all required datasets
 def load_data(path=""):
-    # Load and stack all clinic CSVs from dedicated folder
+    # Define the path to the folder where clinic CSV files are stored
     clinic_folder = os.path.join(path, "clinic_data")
+    # Get a list of all CSV files in the clinic data folder
     clinic_files = [f for f in os.listdir(clinic_folder) if f.endswith(".csv")]
+    # Read and concatenate all CSVs into a single DataFrame
     dataset_clinic = pd.concat(
         [pd.read_csv(os.path.join(clinic_folder, f)) for f in clinic_files],
-        ignore_index=True
+        ignore_index=True    # Reset index in the concatenated DataFrame
     )
 
     # Load the other datasets
-    dataset_medunderserved = pd.read_csv(f"{path}MUA_DATA_2025.csv")
-    dataset_city_county = pd.read_csv(f"{path}US_City_County_Data.csv")
+    dataset_medunderserved = pd.read_csv(f"{path}MUA_DATA_2025.csv")  # Medical underserved areas
+    dataset_city_county = pd.read_csv(f"{path}US_City_County_Data.csv")  # City to county mappings
 
+     # Return all loaded datasets
     return dataset_clinic, dataset_medunderserved, dataset_city_county
 
 
 # ---------------------- Merge Data ----------------------
+# Function to merge clinic data with location and underserved area info
 def merge_datasets(dataset_clinic, dataset_medunderserved, dataset_city_county):
-    # Merge clinic with county info
+    # Merge clinic data with city/county mapping using city and state as keys
     clinic_with_county = pd.merge(
         dataset_clinic,
         dataset_city_county[['City', 'State', 'County']],
         on=['City', 'State'],
-        how='left'
+        how='left'  # Keep all clinic data even if no match in city/county
     )
 
-    #  Merge with medically underserved and rural status data
+    # Merge with designation type and rural status info using state and county as keys
     merged = pd.merge(
         clinic_with_county,
         dataset_medunderserved[['State', 'County', 'Designation Type', 'Rural Status Description']],
         on=['State', 'County'],
-        how='left'
+        how='left'   # Keep all rows, fill in rural status if available
     )
 
-    # Create boolean flags for later use in reporting
+    # Create boolean flags for indicating whether the record is from a medically underserved area
     merged['Is_Underserved'] = merged['Rural Status Description'].notna()
+    # Flag whether the area is considered rural
     merged['Is_Rural'] = merged['Rural Status Description'].astype(str).str.strip().str.lower().eq('rural')
 
-    # Convert to Yes/No for reporting
+    # Convert boolean flags to Yes/No strings for reporting
     merged['Is_Underserved'] = merged['Is_Underserved'].map({True: 'Yes', False: 'No'})
     merged['Is_Rural'] = merged['Is_Rural'].map({True: 'Yes', False: 'No'})
 
-    return merged
+    return merged # Return the final merged DataFrame
 
 
 # ---------------------- Class: DiagnosisAnalyzer ----------------------
+# Class for performing diagnosis-related analysis
 class DiagnosisAnalyzer:
     def __init__(self, merged_data):
+        # Save a copy of the merged dataset for use in analysis
         self.data = merged_data.copy()
-        self.diagnosis_filtered = None
+        self.diagnosis_filtered = None  # Placeholder for filtered subset
 
     def filter_by_keywords(self, keywords):
         """Filter diagnoses based on keywords."""
-        pattern = '|'.join(keywords)
-        self.diagnosis_filtered = self.data[self.data['Diagnosis Name'].str.contains(pattern, case=False, na=False)]
+        pattern = '|'.join(keywords)  # Combine keywords into regex OR pattern
+        self.diagnosis_filtered = self.data[
+            self.data['Diagnosis Name'].str.contains(pattern, case=False, na=False)
+            ]
 
     def categorize_diagnosis(self):
         """Categorize filtered diagnoses into groups."""
@@ -260,19 +270,23 @@ city_data = pd.read_csv(f"{path}US_City_County_Data.csv")
 city_data['City'] = city_data['City'].astype(str).str.strip().str.lower()
 city_data['State'] = city_data['State'].astype(str).str.strip().str.upper()
 
+# Group diagnosis data by city/state to get diagnosis counts
 city_counts = analyzer.diagnosis_filtered.groupby(['City', 'State']).size().reset_index(name='Diagnosis Count')
 city_counts['City'] = city_counts['City'].astype(str).str.strip().str.lower()
 city_counts['State'] = city_counts['State'].astype(str).str.strip().str.upper()
 
+# Merge counts with city data for mapping
 city_geo = pd.merge(city_counts, city_data, on=['City', 'State'], how='left')
 
 # Handle lat/lng columns
 lat_col = next((col for col in city_geo.columns if col.strip().lower() in ['latitude', 'lat']), None)
 lon_col = next((col for col in city_geo.columns if col.strip().lower() in ['longitude', 'lng', 'lon']), None)
 
+# Ensure the required columns are available
 if lat_col is None or lon_col is None:
     raise ValueError("Latitude and/or Longitude columns not found in the city data.")
 
+# Drop rows where lat/lon are missing and convert to geometry points
 city_geo = city_geo.dropna(subset=[lat_col, lon_col])
 city_geo['geometry'] = city_geo.apply(lambda row: Point(row[lon_col], row[lat_col]), axis=1)
 city_gdf = gpd.GeoDataFrame(city_geo, geometry='geometry', crs='EPSG:4326')
@@ -282,6 +296,7 @@ state_totals = analyzer.diagnosis_filtered.groupby('State').size().reset_index(n
 state_totals['State'] = state_totals['State'].astype(str).str.upper()
 state_totals['Full Name'] = state_totals['State'].apply(lambda abbr: us.states.lookup(abbr).name if us.states.lookup(abbr) else abbr)
 
+# Load US state geometry and merge with totals
 us_states = gpd.read_file(f"{path}us-states.json")
 us_states = us_states.rename(columns={"name": "Full Name"})
 us_states = us_states.merge(state_totals, on="Full Name", how="left")
@@ -293,6 +308,7 @@ city_gdf.plot(ax=ax, markersize=city_gdf['Diagnosis Count'], color='blue', alpha
 plt.title("US Diagnosis Distribution by State and City")
 plt.axis('off')
 
+# Define legend for bubble sizes
 bubble_sizes = [10, 50, 100, 250, 500]
 legend_elements = [
     Line2D([0], [0], marker='o', color='w', label='City (diagnosis count)',
@@ -302,7 +318,7 @@ legend_elements = [
            markerfacecolor='blue', markeredgecolor='k', markersize=np.sqrt(size), linestyle='None')
     for size in bubble_sizes
 ]
-ax.legend(handles=legend_elements, loc='lower left')
-plt.savefig(f"{plots_dir}/maps/us_diagnosis_map.png", bbox_inches="tight")
-plt.close()
+ax.legend(handles=legend_elements, loc='lower left') # Add custom legend
+plt.savefig(f"{plots_dir}/maps/us_diagnosis_map.png", bbox_inches="tight") # Save map plot
+plt.close() # Close the figure to free memory
 
